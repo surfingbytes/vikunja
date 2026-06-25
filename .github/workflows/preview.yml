@@ -12,6 +12,7 @@ on:
 
 jobs:
   docker:
+    if: ${{ github.repository == 'go-vikunja/vikunja' }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
