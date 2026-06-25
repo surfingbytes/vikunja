@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocation } from 'vue-router'
-import {saveLastVisited} from '@/helpers/saveLastVisited'
+import {saveLastVisited, saveLastVisitedPage, getLastVisitedPage} from '@/helpers/saveLastVisited'
 
 import {getProjectViewId} from '@/helpers/projectView'
 import {parseDateOrString} from '@/helpers/time/parseDateOrString'
@@ -9,8 +9,10 @@ import {LINK_SHARE_HASH_PREFIX} from '@/constants/linkShareHash'
 import {REDIRECT_HASH_PREFIX} from '@/constants/redirectHash'
 import {AUTH_ROUTE_NAMES} from '@/constants/authRouteNames'
 import {PRO_FEATURE} from '@/constants/proFeatures'
+import {DEFAULT_PAGE} from '@/constants/defaultPage'
 
 import {useAuthStore} from '@/stores/auth'
+import {useProjectStore} from '@/stores/projects'
 import {useBaseStore} from '@/stores/base'
 import {useConfigStore} from '@/stores/config'
 
@@ -46,6 +48,45 @@ const router = createRouter({
 			path: '/',
 			name: 'home',
 			component: () => import('@/views/Home.vue'),
+			async beforeEnter(_to, from) {
+				if (from.name !== undefined) {
+					return
+				}
+
+				const redirectKey = 'defaultPageRedirectDone'
+				if (sessionStorage.getItem(redirectKey)) {
+					return
+				}
+				sessionStorage.setItem(redirectKey, 'true')
+
+				const authStore = useAuthStore()
+				const projectStore = useProjectStore()
+				const defaultPage = authStore.settings?.frontendSettings?.defaultPage
+
+				switch (defaultPage) {
+					case DEFAULT_PAGE.UPCOMING:
+						return {name: 'tasks.range'}
+					case DEFAULT_PAGE.DEFAULT_PROJECT: {
+						const projectId = authStore.settings?.defaultProjectId
+						if (projectId) {
+							try {
+								await projectStore.loadProject(projectId)
+								return {name: 'project.index', params: {projectId}}
+							} catch {
+								break
+							}
+						}
+						break
+					}
+					case DEFAULT_PAGE.LAST_VISITED: {
+						const last = getLastVisitedPage()
+						if (last) {
+							return {name: last.name, params: last.params, query: last.query}
+						}
+						break
+					}
+				}
+			},
 		},
 		{
 			path: '/:pathMatch(.*)*',
@@ -619,6 +660,12 @@ router.beforeEach(async (to, from) => {
 
 	if(!to.fullPath.endsWith(to.hash)) {
 		return to.fullPath + to.hash
+	}
+})
+
+router.afterEach((to) => {
+	if (!AUTH_ROUTE_NAMES.has(to.name as string) && to.name !== 'home') {
+		saveLastVisitedPage(to.name as string, to.params, to.query)
 	}
 })
 
