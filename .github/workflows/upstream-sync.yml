@@ -1,0 +1,76 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    if: ${{ github.repository != 'go-vikunja/vikunja' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+      SYNC_BRANCH: sync-upstream-main
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Merge upstream main
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git remote add upstream https://github.com/go-vikunja/vikunja.git
+          git fetch origin main
+          git fetch upstream main
+          git switch -C "$SYNC_BRANCH" origin/main
+
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Fork main already contains upstream/main."
+            exit 0
+          fi
+
+          git merge --no-edit upstream/main
+          git push --force-with-lease origin "$SYNC_BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Open or update sync PR
+        if: steps.merge.outputs.changed == 'true'
+        run: |
+          body_file="$RUNNER_TEMP/upstream-sync-body.md"
+          cat > "$body_file" <<'EOF'
+          This PR merges the latest `go-vikunja/vikunja:main` into this fork's `main`.
+
+          Resolve conflicts manually if this workflow fails before opening or updating the PR.
+          EOF
+
+          existing_pr="$(gh pr list \
+            --base main \
+            --head "${GITHUB_REPOSITORY_OWNER}:$SYNC_BRANCH" \
+            --state open \
+            --json number \
+            --jq '.[0].number')"
+
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" \
+              --title "chore: sync upstream main" \
+              --body-file "$body_file"
+          else
+            gh pr create \
+              --base main \
+              --head "$SYNC_BRANCH" \
+              --title "chore: sync upstream main" \
+              --body-file "$body_file"
+          fi
