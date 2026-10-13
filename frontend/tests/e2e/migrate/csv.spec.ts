@@ -7,7 +7,10 @@ test('CSV detection, preview and import persist after reload', async ({authentic
 	await page.getByRole('button', {name: 'Import Tasks', exact: true}).click()
 	await expect(page.locator('.success-step [role=status]')).toContainText('The import from CSV has finished', {timeout: 20000})
 	await expect(page.locator('.success-step .message.danger')).toHaveCount(0)
-	await page.goto('/')
+	// Prefer Overview nav so a lastVisited landing page does not bounce us back to /migrate.
+	await page.locator('nav.menu.top-menu a').filter({hasText: 'Overview'}).click()
+	await page.waitForLoadState('networkidle')
+	await expect(page).toHaveURL('/')
 	await page.reload()
 	await expect(page.locator('.tasks')).toContainText('Imported CSV task')
 	const stored = await apiContext.get('/api/v2/tasks', {headers: {Authorization: `Bearer ${userToken}`}})

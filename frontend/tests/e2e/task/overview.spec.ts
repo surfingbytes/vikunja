@@ -79,8 +79,10 @@ test.describe('Home Page Task Overview', () => {
 		await page.waitForLoadState('networkidle')
 		// Wait for the tasks list to load and contain the new task
 		await expect(page.locator('.tasks')).toContainText(newTaskTitle)
-		await page.goto('/')
+		// Use Overview navigation — a full reload of `/` follows the configured landing page.
+		await page.locator('nav.menu.top-menu a').filter({hasText: 'Overview'}).click()
 		await page.waitForLoadState('networkidle')
+		await expect(page).toHaveURL('/')
 		await expect(page.locator('[data-cy="showTasks"] .card .task').first()).toContainText(newTaskTitle)
 	})
 
@@ -102,8 +104,9 @@ test.describe('Home Page Task Overview', () => {
 		await page.locator('.task-add textarea').fill(newTaskTitle)
 		await page.locator('.task-add textarea').press('Enter')
 		await taskResponsePromise
-		await page.goto('/')
+		await page.locator('nav.menu.top-menu a').filter({hasText: 'Overview'}).click()
 		await page.waitForLoadState('networkidle')
+		await expect(page).toHaveURL('/')
 		await expect(page.locator('[data-cy="showTasks"]')).not.toContainText(newTaskTitle)
 	})
 

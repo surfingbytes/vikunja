@@ -76,15 +76,25 @@ test.describe('Project History', () => {
 			}, false)
 		}
 
+		// Keep reloads on the overview page while this test focuses on the
+		// last-viewed section visibility.
+		await page.goto('/')
+		await page.waitForLoadState('networkidle')
+		const token = await page.evaluate(() => localStorage.getItem('token'))
+		await updateUserSettings(apiContext, token!, {
+			frontend_settings: {
+				default_page: 'overview',
+			},
+		})
+
 		// Visit projects to build up history
 		await visitProjectsToBuildHistory(page, projects)
 
 		// Go to overview and verify section is visible
-		await page.goto('/')
+		await page.locator('nav.menu.top-menu a').filter({hasText: 'Overview'}).click()
 		await expect(page.locator('body')).toContainText('Last viewed')
 
 		// Disable the setting via API
-		const token = await page.evaluate(() => localStorage.getItem('token'))
 		await updateUserSettings(apiContext, token!, {
 			frontend_settings: {
 				show_last_viewed: false,
@@ -116,6 +126,7 @@ test.describe('Project History', () => {
 		const token = await page.evaluate(() => localStorage.getItem('token'))
 		await updateUserSettings(apiContext, token!, {
 			frontend_settings: {
+				default_page: 'overview',
 				show_last_viewed: false,
 			},
 		})

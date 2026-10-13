@@ -1,5 +1,6 @@
 import type {BasicColorSchema} from '@vueuse/core'
 import type {SupportedLocale} from '@/i18n'
+import type {DefaultPage} from '@/constants/defaultPage'
 import type {DefaultProjectViewKind} from '@/constants/projectView'
 import type {Priority} from '@/constants/priorities'
 import type {DateDisplay} from '@/constants/dateDisplay'
@@ -7,6 +8,7 @@ import type {TimeFormat} from '@/constants/timeFormat'
 import type {IRelationKind} from '@/types/IRelationKind'
 import type {TaskReminder, UserGeneralSettings} from '@/client/generated'
 import {PrefixMode} from '@/modules/quickAddMagic'
+import {DEFAULT_PAGE} from '@/constants/defaultPage'
 import {DEFAULT_PROJECT_VIEW_SETTINGS} from '@/constants/projectView'
 import {PRIORITIES} from '@/constants/priorities'
 import {DATE_DISPLAY} from '@/constants/dateDisplay'
@@ -33,6 +35,7 @@ export interface FrontendSettings {
 	quick_add_default_reminders: {relative_period?: number}[]
 	time_tracking_default_start?: string
 	default_due_time?: string
+	default_page: DefaultPage
 }
 
 export function taskRemindersFromSettings(
@@ -88,5 +91,6 @@ export function defaultFrontendSettings(): FrontendSettings {
 		default_due_time: undefined,
 		time_tracking_default_start: '09:00',
 		quick_add_default_reminders: [],
+		default_page: DEFAULT_PAGE.OVERVIEW,
 	}
 }
