@@ -4,16 +4,17 @@
 		aria-label="main navigation"
 		class="navbar d-print-none"
 	>
-		<RouterLink
-			:to="{ name: 'home' }"
+		<a
+			href="/"
 			class="logo-link"
 			:aria-label="$t('navigation.home')"
+			@click.prevent="openLandingPage"
 		>
 			<Logo
 				width="164"
 				height="48"
 			/>
-		</RouterLink>
+		</a>
 
 		<MenuButton class="menu-button" />
 
@@ -129,7 +130,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import { PERMISSIONS as Permissions } from '@/constants/permissions'
@@ -148,6 +149,7 @@ import UserAvatar from '@/components/misc/UserAvatar.vue'
 
 import { getProjectTitle } from '@/helpers/getProjectTitle'
 import { isEditorContentEmpty } from '@/helpers/editorContentEmpty'
+import { getDefaultPageRoute } from '@/helpers/getDefaultPageRoute'
 
 import { useBaseStore } from '@/stores/base'
 import { useConfigStore } from '@/stores/config'
@@ -166,6 +168,7 @@ const menuActive = computed(() => baseStore.menuActive)
 
 // Standalone pages (no project) surface their route's title in the header.
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const pageTitle = computed(() => {
 	const title = route.meta.title as string | undefined
@@ -178,6 +181,10 @@ const configStore = useConfigStore()
 const imprintUrl = computed(() => configStore.legal.imprint_url)
 const privacyPolicyUrl = computed(() => configStore.legal.privacy_policy_url)
 const adminPanelEnabled = computed(() => configStore.isProFeatureEnabled(PRO_FEATURE.ADMIN_PANEL))
+
+async function openLandingPage() {
+	await router.push(await getDefaultPageRoute() ?? {name: 'home'})
+}
 </script>
 
 <style lang="scss" scoped>

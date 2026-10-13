@@ -39,6 +39,15 @@
 	>
 		<div class="field-group">
 			<FormField
+				:label="$t('user.settings.general.defaultPage')"
+				layout="two-col"
+			>
+				<FormSelect
+					v-model="settings.frontend_settings.default_page"
+					:options="defaultPageOptions"
+				/>
+			</FormField>
+			<FormField
 				:label="$t('user.settings.general.defaultView')"
 				layout="two-col"
 			>
@@ -339,6 +348,7 @@ import {useAuthStore} from '@/stores/auth'
 import {useConfigStore} from '@/stores/config'
 import {taskRemindersFromSettings, type UserSettings} from '@/helpers/userSettings'
 import {isSavedFilterProject} from '@/client/queries/projects'
+import {DEFAULT_PAGE} from '@/constants/defaultPage'
 import {DEFAULT_PROJECT_VIEW_SETTINGS} from '@/constants/projectView'
 import {PRIORITIES} from '@/constants/priorities'
 import {DATE_DISPLAY} from '@/constants/dateDisplay'
@@ -360,6 +370,13 @@ const {t} = useI18n({useScope: 'global'})
 useTitle(() => `${t('user.settings.general.title')} - ${t('user.settings.title')}`)
 
 const DEFAULT_PROJECT_ID = 0
+
+const defaultPageOptions = computed(() => [
+	{value: DEFAULT_PAGE.OVERVIEW, label: t('user.settings.general.defaultPageOptions.overview')},
+	{value: DEFAULT_PAGE.UPCOMING, label: t('user.settings.general.defaultPageOptions.upcoming')},
+	{value: DEFAULT_PAGE.DEFAULT_PROJECT, label: t('user.settings.general.defaultPageOptions.defaultProject')},
+	{value: DEFAULT_PAGE.LAST_VISITED, label: t('user.settings.general.defaultPageOptions.lastVisited')},
+])
 
 const defaultViewOptions = computed(() =>
 	Object.values(DEFAULT_PROJECT_VIEW_SETTINGS).map(view => ({

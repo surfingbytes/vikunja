@@ -24,6 +24,7 @@ import {
 	type FrontendSettings,
 	type UserSettings,
 } from '@/helpers/userSettings'
+import {normalizeDefaultPage} from '@/constants/defaultPage'
 import {getBrowserLanguage, i18n, setLanguage, type SupportedLocale} from '@/i18n'
 import {error} from '@/message'
 
@@ -53,8 +54,12 @@ export function normalizeUserInfo(user: UserInfoBody): UserInfoResponse {
 }
 
 export function normalizeUserSettings(data: UserGeneralSettings = {}): UserSettings {
-	const frontend = typeof data.frontend_settings === 'object' && data.frontend_settings !== null
-		? data.frontend_settings as Partial<FrontendSettings> : {}
+	const frontendRaw = typeof data.frontend_settings === 'object' && data.frontend_settings !== null
+		? data.frontend_settings as Partial<FrontendSettings> & {defaultPage?: unknown}
+		: {}
+	const {defaultPage: legacyDefaultPage, ...frontend} = frontendRaw
+	const defaultPage = normalizeDefaultPage(frontend.default_page)
+		?? normalizeDefaultPage(legacyDefaultPage)
 	return {
 		name: data.name ?? '',
 		email_reminders_enabled: data.email_reminders_enabled ?? true,
@@ -81,6 +86,7 @@ export function normalizeUserSettings(data: UserGeneralSettings = {}): UserSetti
 		frontend_settings: {
 			...defaultFrontendSettings(),
 			...frontend,
+			...(defaultPage ? {default_page: defaultPage} : {}),
 			quick_add_default_reminders: Array.isArray(frontend.quick_add_default_reminders)
 				? frontend.quick_add_default_reminders.map(reminder => ({...reminder}))
 				: [],

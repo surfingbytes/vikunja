@@ -371,4 +371,16 @@ describe('normalizeUserSettings', () => {
 
 		expect(settings.frontend_settings.quick_add_default_reminders).toEqual([])
 	})
+
+	it('keeps default_page and migrates the legacy defaultPage key', () => {
+		expect(normalizeUserSettings({
+			frontend_settings: {default_page: 'upcoming'},
+		}).frontend_settings.default_page).toBe('upcoming')
+
+		expect(normalizeUserSettings({
+			frontend_settings: {defaultPage: 'defaultProject'} as never,
+		}).frontend_settings.default_page).toBe('defaultProject')
+
+		expect(normalizeUserSettings({}).frontend_settings.default_page).toBe('lastVisited')
+	})
 })
